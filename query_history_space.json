@@ -1,0 +1,774 @@
+{
+  "version": 2,
+  "data_sources": {
+    "tables": [
+      {
+        "identifier": "system.query.history",
+        "column_configs": [
+          {
+            "column_name": "account_id",
+            "enable_format_assistance": true,
+            "enable_entity_matching": true,
+            "description": [
+              "ID of the account."
+            ]
+          },
+          {
+            "column_name": "cache_origin_statement_id",
+            "enable_format_assistance": true,
+            "enable_entity_matching": true,
+            "description": [
+              "Statement id of query that inserted result in cache when result is fetched from cache, otherwise store the query's statement id."
+            ]
+          },
+          {
+            "column_name": "client_application",
+            "enable_format_assistance": true,
+            "enable_entity_matching": true,
+            "description": [
+              "Client application that ran the statement. For example: Databricks SQL, Tableau, and Power BI."
+            ]
+          },
+          {
+            "column_name": "client_driver",
+            "enable_format_assistance": true,
+            "enable_entity_matching": true,
+            "description": [
+              "The connector used to connect to Databricks to run the statement. For example: Databricks SQL Driver for Go, Databricks ODBC Driver, Databricks JDBC Driver."
+            ]
+          },
+          {
+            "column_name": "compilation_duration_ms",
+            "enable_format_assistance": true,
+            "enable_entity_matching": true,
+            "description": [
+              "Time spent loading metadata and optimizing the statement in milliseconds."
+            ]
+          },
+          {
+            "column_name": "compute",
+            "enable_format_assistance": true,
+            "enable_entity_matching": true,
+            "description": [
+              "A struct that represents the type of compute resource used to run the statement and the ID of the resource where applicable. The type value will be WAREHOUSE."
+            ]
+          },
+          {
+            "column_name": "end_time",
+            "enable_format_assistance": true,
+            "enable_entity_matching": true,
+            "description": [
+              "The time the statement execution ended, excluding result fetch time. Timezone information is recorded at the end of the value with +00:00 representing UTC."
+            ]
+          },
+          {
+            "column_name": "error_message",
+            "enable_format_assistance": true,
+            "enable_entity_matching": true,
+            "description": [
+              "Message describing the error condition. If you have configured customer-managed keys, error_message is empty."
+            ]
+          },
+          {
+            "column_name": "executed_as",
+            "enable_format_assistance": true,
+            "enable_entity_matching": true,
+            "description": [
+              "The name of the user or service principal whose privilege was used to run the statement."
+            ]
+          },
+          {
+            "column_name": "executed_as_user_id",
+            "enable_format_assistance": true,
+            "enable_entity_matching": true,
+            "description": [
+              "The ID of the user or service principal whose privilege was used to run the statement."
+            ]
+          },
+          {
+            "column_name": "executed_by",
+            "enable_format_assistance": true,
+            "enable_entity_matching": true,
+            "description": [
+              "The email address or username of the user who ran the statement."
+            ]
+          },
+          {
+            "column_name": "executed_by_user_id",
+            "enable_format_assistance": true,
+            "enable_entity_matching": true,
+            "description": [
+              "The ID of the user who ran the statement."
+            ]
+          },
+          {
+            "column_name": "execution_duration_ms",
+            "enable_format_assistance": true,
+            "enable_entity_matching": true,
+            "description": [
+              "Time spent executing the statement in milliseconds."
+            ]
+          },
+          {
+            "column_name": "execution_status",
+            "enable_format_assistance": true,
+            "enable_entity_matching": true,
+            "description": [
+              "The statement termination state. Possible values are:\n\nFINISHED: execution was successful\n\nFAILED: execution failed with the reason for failure described in the accompanying error message\n\nCANCELED: execution was canceled"
+            ]
+          },
+          {
+            "column_name": "from_result_cache",
+            "enable_format_assistance": true,
+            "enable_entity_matching": true,
+            "description": [
+              "TRUE indicates that the statement result was fetched from the cache."
+            ]
+          },
+          {
+            "column_name": "produced_rows",
+            "enable_format_assistance": true,
+            "enable_entity_matching": true,
+            "description": [
+              "Total number of rows returned by the statement."
+            ]
+          },
+          {
+            "column_name": "pruned_files",
+            "enable_format_assistance": true,
+            "enable_entity_matching": true,
+            "description": [
+              "The number of pruned files during table partition and file pruning."
+            ]
+          },
+          {
+            "column_name": "pruned_files_bytes",
+            "enable_format_assistance": true,
+            "enable_entity_matching": true,
+            "description": [
+              "The number of bytes of files pruned after table partition and file pruning."
+            ]
+          },
+          {
+            "column_name": "query_parameters",
+            "enable_format_assistance": true,
+            "enable_entity_matching": true,
+            "description": [
+              "Query parameters values associated with the query. Only one of named_parameters or pos_parameters can be populated."
+            ]
+          },
+          {
+            "column_name": "query_source",
+            "enable_format_assistance": true,
+            "enable_entity_matching": true,
+            "description": [
+              "A struct that contains key-value pairs representing one or more Databricks entities that were involved in the execution of this statement, such as jobs, notebooks, or dashboards. This field only records Databricks entities and are not sorted by execution order. Statement executions that contain multiple IDs indicate that the execution was triggered by multiple entities: for example, an Alert may trigger on a Job result and call a SQL Query, so all three IDs will be populated within query_source."
+            ]
+          },
+          {
+            "column_name": "query_tags",
+            "enable_format_assistance": true,
+            "enable_entity_matching": true,
+            "description": [
+              "The user-supplied custom tags associated with this statement execution."
+            ]
+          },
+          {
+            "column_name": "read_bytes",
+            "enable_format_assistance": true,
+            "enable_entity_matching": true,
+            "description": [
+              "The number of bytes of files read after IO pruning."
+            ]
+          },
+          {
+            "column_name": "read_files",
+            "enable_format_assistance": true,
+            "enable_entity_matching": true,
+            "description": [
+              "The number of files read after table partition and file pruning."
+            ]
+          },
+          {
+            "column_name": "read_files_bytes",
+            "enable_format_assistance": true,
+            "enable_entity_matching": true,
+            "description": [
+              "The number of bytes of files read after table partition and file pruning."
+            ]
+          },
+          {
+            "column_name": "read_io_cache_percent",
+            "enable_format_assistance": true,
+            "enable_entity_matching": true,
+            "description": [
+              "The percentage of bytes of persistent data read from the IO cache."
+            ]
+          },
+          {
+            "column_name": "read_partitions",
+            "enable_format_assistance": true,
+            "enable_entity_matching": true,
+            "description": [
+              "The number of table partitions read after table partition pruning."
+            ]
+          },
+          {
+            "column_name": "read_rows",
+            "enable_format_assistance": true,
+            "enable_entity_matching": true,
+            "description": [
+              "The number of rows output from scans after table partition, file, in file and row pruning."
+            ]
+          },
+          {
+            "column_name": "result_fetch_duration_ms",
+            "enable_format_assistance": true,
+            "enable_entity_matching": true,
+            "description": [
+              "Time spent, in milliseconds, fetching the statement results after the execution finished."
+            ]
+          },
+          {
+            "column_name": "session_id",
+            "enable_format_assistance": true,
+            "enable_entity_matching": true,
+            "description": [
+              "The Spark session ID."
+            ]
+          },
+          {
+            "column_name": "shuffle_read_bytes",
+            "enable_format_assistance": true,
+            "enable_entity_matching": true,
+            "description": [
+              "The total amount of data in bytes sent over the network."
+            ]
+          },
+          {
+            "column_name": "spilled_local_bytes",
+            "enable_format_assistance": true,
+            "enable_entity_matching": true,
+            "description": [
+              "Size of data, in bytes, temporarily written to disk while executing the statement."
+            ]
+          },
+          {
+            "column_name": "start_time",
+            "enable_format_assistance": true,
+            "enable_entity_matching": true,
+            "description": [
+              "The time when Databricks received the request. Timezone information is recorded at the end of the value with +00:00 representing UTC."
+            ]
+          },
+          {
+            "column_name": "statement_id",
+            "enable_format_assistance": true,
+            "enable_entity_matching": true,
+            "description": [
+              "The ID that uniquely identifies the execution of the statement. You can use this ID to find the statement execution in the Query History UI."
+            ]
+          },
+          {
+            "column_name": "statement_text",
+            "enable_format_assistance": true,
+            "enable_entity_matching": true,
+            "description": [
+              "Text of the SQL statement. If you have configured customer-managed keys, statement_text is empty."
+            ]
+          },
+          {
+            "column_name": "statement_type",
+            "enable_format_assistance": true,
+            "enable_entity_matching": true,
+            "description": [
+              "The statement type. For example: ALTER, COPY, and`INSERT`."
+            ]
+          },
+          {
+            "column_name": "total_duration_ms",
+            "enable_format_assistance": true,
+            "enable_entity_matching": true,
+            "description": [
+              "Total execution time of the statement in milliseconds ( excluding result fetch time )."
+            ]
+          },
+          {
+            "column_name": "total_task_duration_ms",
+            "enable_format_assistance": true,
+            "enable_entity_matching": true,
+            "description": [
+              "The sum of all task durations in milliseconds. This time represents the combined time it took to run the query across all cores of all nodes. It can be significantly longer than the wall-clock duration if multiple tasks are executed in parallel. It can be shorter than the wall-clock duration if tasks wait for available nodes."
+            ]
+          },
+          {
+            "column_name": "update_time",
+            "enable_format_assistance": true,
+            "enable_entity_matching": true,
+            "description": [
+              "The time the statement last received a progress update. Timezone information is recorded at the end of the value with +00:00 representing UTC."
+            ]
+          },
+          {
+            "column_name": "waiting_at_capacity_duration_ms",
+            "enable_format_assistance": true,
+            "enable_entity_matching": true,
+            "description": [
+              "Time spent waiting in queue for available compute capacity in milliseconds."
+            ]
+          },
+          {
+            "column_name": "waiting_for_compute_duration_ms",
+            "enable_format_assistance": true,
+            "enable_entity_matching": true,
+            "description": [
+              "Time spent waiting for compute resources to be provisioned in milliseconds."
+            ]
+          },
+          {
+            "column_name": "workspace_id",
+            "enable_format_assistance": true,
+            "enable_entity_matching": true,
+            "description": [
+              "The ID of the workspace where the query was run."
+            ]
+          },
+          {
+            "column_name": "written_bytes",
+            "enable_format_assistance": true,
+            "enable_entity_matching": true,
+            "description": [
+              "The size in bytes of persistent data written to cloud object storage."
+            ]
+          },
+          {
+            "column_name": "written_files",
+            "enable_format_assistance": true,
+            "enable_entity_matching": true,
+            "description": [
+              "The number of files of persistent data written to cloud object storage."
+            ]
+          },
+          {
+            "column_name": "written_rows",
+            "enable_format_assistance": true,
+            "enable_entity_matching": true,
+            "description": [
+              "Total number of rows of persistent data written to cloud object storage."
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "instructions": {
+    "text_instructions": [
+      {
+        "id": "480fbc3508574207afb810bac9e0cbd7",
+        "content": [
+          "=== TIME FILTERING (REQUIRED) ===\nAlways filter on start_time when querying \u2014 this table can be very large.\nDefault to the last 7 days if the user doesn't specify a time range:\n  start_time >= current_date() - INTERVAL 7 DAYS",
+          "\n\n",
+          "=== COST & DURATION ===\nWhen the user asks about 'cost' or 'expensive queries', use total_duration_ms as a proxy since direct DBU cost is not in this table.\nLonger duration on a warehouse = more DBU consumption.\n\nDuration conversions:\n  - Milliseconds to seconds: divide by 1000\n  - Milliseconds to minutes: divide by 60000",
+          "\n\n",
+          "=== STRUCT COLUMNS ===\n\ncompute (struct):\n  - compute.warehouse_id \u2014 warehouse ID (string)\n  - compute.type \u2014 WAREHOUSE or SERVERLESS_COMPUTE\n  - compute.cluster_id \u2014 cluster ID (string)\n\nquery_source (struct):\n  - query_source.alert_id \u2014 alert that triggered the query\n  - query_source.dashboard_id \u2014 AI/BI dashboard ID\n  - query_source.legacy_dashboard_id \u2014 legacy (DBSQL) dashboard ID\n  - query_source.notebook_id \u2014 notebook that ran the query\n  - query_source.sql_query_id \u2014 saved SQL query ID\n  - query_source.genie_space_id \u2014 Genie space ID\n  - query_source.job_info.job_id \u2014 job ID (nested struct)\n  - query_source.job_info.job_run_id \u2014 job run ID\n  - query_source.job_info.job_task_run_id \u2014 task run ID\n  - query_source.pipeline_info.pipeline_id \u2014 DLT pipeline ID (nested struct)\n  - query_source.pipeline_info.update_id \u2014 pipeline update ID\n\n  IMPORTANT: job_id and pipeline_id are nested. Use query_source.job_info.job_id, NOT query_source.job_id.",
+          "\n\n",
+          "=== BYTE CONVERSIONS ===\nAlways convert bytes to human-readable units and alias with the unit:\n  - MB: divide by 1024*1024\n  - GB: divide by 1024*1024*1024\n  - TB: divide by 1024*1024*1024*1024",
+          "\n\n",
+          "=== SAFE MATH ===\nUse try_divide() to avoid division by zero errors.\nEspecially important when calculating:\n  - Scan-to-output ratios (read_rows / produced_rows)\n  - Cache hit rates\n  - Percentages",
+          "\n\n",
+          "=== EXECUTION STATUS ===\nexecution_status has three possible values:\n  - FINISHED \u2014 execution was successful\n  - FAILED \u2014 execution failed (check error_message)\n  - CANCELED \u2014 execution was canceled\n\nAlways filter to FINISHED for performance analysis unless the user asks about errors or failures.",
+          "\n\n",
+          "=== STATEMENT TYPES ===\nstatement_type values include:\n  SELECT, INSERT, MERGE, CREATE, ALTER, DROP,\n  COPY, SET, USE, DESCRIBE, SHOW, GRANT, REVOKE\n\nUse these when the user asks about query types or workload mix.",
+          "\n\n",
+          "=== CLIENT APPLICATIONS ===\nclient_application identifies the tool that ran the query:\n  - 'Databricks SQL Editor'\n  - 'Tableau'\n  - 'Power BI'\n  - 'dbt'\n  - and others\n\nUse this when the user asks about BI tools or client applications.",
+          "\n\n",
+          "=== PERFORMANCE RED FLAGS ===\n\n1. Slow queries:\n   Order by total_duration_ms DESC.\n\n2. Queued queries:\n   Look at waiting_for_compute_duration_ms and waiting_at_capacity_duration_ms.\n\n3. Disk spill:\n   spilled_local_bytes > 0 means the query ran out of memory and spilled to disk.\n   This is a performance problem worth highlighting.\n\n4. Poor scan efficiency:\n   A high ratio of read_rows to produced_rows (e.g., 1000:1) suggests missing filters or poor partition pruning.",
+          "\n\n",
+          "=== CACHING ===\nfrom_result_cache = true means the query was served from cache with zero compute cost.\nread_io_cache_percent shows what % of data was served from the IO cache.\nUse both for cache hit rate analysis.",
+          "\n\n",
+          "=== DISPLAY BEST PRACTICES ===\n\n- Truncate statement_text to 200 characters:\n    LEFT(statement_text, 200) AS query_preview\n\n- Group by user using the executed_by column (contains email address).\n\n- For warehouse utilization, group by:\n    compute.warehouse_id and DATE(start_time)\n  to see daily patterns."
+        ]
+      }
+    ],
+    "example_question_sqls": [
+      {
+        "id": "17e787bdcee3440689de42619e064787",
+        "question": [
+          "What is the IO cache hit rate by warehouse?"
+        ],
+        "sql": [
+          "SELECT\n  compute.warehouse_id,\n  COUNT(*) AS query_count,\n  ROUND(AVG(read_io_cache_percent), 1) AS avg_io_cache_pct,\n  ROUND(\n    100.0 * SUM(CASE WHEN from_result_cache THEN 1 ELSE 0 END) / COUNT(*),\n    1\n  ) AS result_cache_hit_pct\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\n  AND execution_status = 'FINISHED'\nGROUP BY compute.warehouse_id\nORDER BY query_count DESC"
+        ]
+      },
+      {
+        "id": "1eec4b96826c4dd1a8b97780dab1c649",
+        "question": [
+          "Which queries read the most data?"
+        ],
+        "sql": [
+          "SELECT\n  executed_by,\n  LEFT(statement_text, 200) AS query_preview,\n  read_bytes / (1024*1024*1024) AS read_gb,\n  read_rows,\n  read_files,\n  read_partitions,\n  total_duration_ms / 1000 AS duration_sec\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\n  AND execution_status = 'FINISHED'\nORDER BY read_bytes DESC\nLIMIT 10"
+        ]
+      },
+      {
+        "id": "2e2a0a73f33f4e69a031ddde71f815b1",
+        "question": [
+          "What is the daily query trend over the last 30 days?"
+        ],
+        "sql": [
+          "SELECT\n  DATE(start_time) AS query_date,\n  COUNT(*) AS total_queries,\n  COUNT(DISTINCT executed_by) AS unique_users,\n  SUM(CASE WHEN execution_status = 'FAILED' THEN 1 ELSE 0 END) AS failed_queries,\n  ROUND(AVG(total_duration_ms) / 1000, 2) AS avg_duration_sec\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 30 DAYS\nGROUP BY DATE(start_time)\nORDER BY query_date"
+        ]
+      },
+      {
+        "id": "3ba9b13c846b4a3ea35163f9e15857c8",
+        "question": [
+          "Access struct columns (compute, query_source)"
+        ],
+        "sql": [
+          "SELECT\n  compute.warehouse_id,\n  compute.type AS compute_type,\n  query_source.dashboard_id,\n  query_source.legacy_dashboard_id,\n  query_source.notebook_id,\n  query_source.alert_id,\n  query_source.sql_query_id,\n  query_source.genie_space_id,\n  query_source.job_info.job_id,\n  query_source.job_info.job_run_id,\n  query_source.pipeline_info.pipeline_id,\n  query_source.pipeline_info.update_id\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\nLIMIT 10"
+        ]
+      },
+      {
+        "id": "3cd7ce13a4ee4960bcd7b2f277c338b4",
+        "question": [
+          "Count with conditional aggregation (CASE WHEN)"
+        ],
+        "sql": [
+          "SELECT\n  DATE(start_time) AS query_date,\n  COUNT(*) AS total,\n  SUM(CASE WHEN execution_status = 'FINISHED' THEN 1 ELSE 0 END) AS succeeded,\n  SUM(CASE WHEN execution_status = 'FAILED' THEN 1 ELSE 0 END) AS failed,\n  SUM(CASE WHEN execution_status = 'CANCELED' THEN 1 ELSE 0 END) AS canceled,\n  SUM(CASE WHEN from_result_cache THEN 1 ELSE 0 END) AS from_cache,\n  SUM(CASE WHEN spilled_local_bytes > 0 THEN 1 ELSE 0 END) AS spilled\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\nGROUP BY DATE(start_time)\nORDER BY query_date"
+        ]
+      },
+      {
+        "id": "3e77e2b2c7c5442e99f606be8b6f4dae",
+        "question": [
+          "Duration breakdown \u2014 where is time spent?"
+        ],
+        "sql": [
+          "SELECT\n  executed_by,\n  LEFT(statement_text, 200) AS query_preview,\n  waiting_for_compute_duration_ms / 1000 AS compute_wait_sec,\n  waiting_at_capacity_duration_ms / 1000 AS queue_wait_sec,\n  compilation_duration_ms / 1000 AS compile_sec,\n  execution_duration_ms / 1000 AS exec_sec,\n  result_fetch_duration_ms / 1000 AS fetch_sec,\n  total_duration_ms / 1000 AS total_sec\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\n  AND execution_status = 'FINISHED'\nORDER BY total_duration_ms DESC\nLIMIT 10"
+        ]
+      },
+      {
+        "id": "4b7b26752a7e4f399c8438ca2cdee42e",
+        "question": [
+          "Which dashboards generate the most queries?"
+        ],
+        "sql": [
+          "SELECT\n  query_source.dashboard_id,\n  COUNT(*) AS query_count,\n  COUNT(DISTINCT executed_by) AS unique_users,\n  ROUND(AVG(total_duration_ms) / 1000, 2) AS avg_duration_sec,\n  SUM(read_bytes) / (1024*1024*1024) AS total_read_gb\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\n  AND query_source.dashboard_id IS NOT NULL\nGROUP BY query_source.dashboard_id\nORDER BY query_count DESC\nLIMIT 10"
+        ]
+      },
+      {
+        "id": "643fc435ff0d4b969f9c5f1aec954c10",
+        "question": [
+          "Filter queries by a specific client_application using ILIKE pattern matching"
+        ],
+        "sql": [
+          "SELECT\n  client_application,\n  executed_by,\n  LEFT(statement_text, 200) AS query_preview,\n  try_divide(total_duration_ms, 1000) AS duration_sec\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\n  AND client_application ILIKE '%Databricks%'\nORDER BY total_duration_ms DESC\nLIMIT 20"
+        ]
+      },
+      {
+        "id": "734077f5ccad4a61abdfe9535acd82aa",
+        "question": [
+          "Convert milliseconds to seconds and minutes"
+        ],
+        "sql": [
+          "SELECT\n  total_duration_ms / 1000 AS duration_sec,\n  total_duration_ms / 60000 AS duration_min,\n  waiting_for_compute_duration_ms / 1000 AS compute_wait_sec,\n  waiting_at_capacity_duration_ms / 1000 AS capacity_wait_sec,\n  execution_duration_ms / 1000 AS exec_sec,\n  compilation_duration_ms / 1000 AS compile_sec\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\nLIMIT 10"
+        ]
+      },
+      {
+        "id": "7366b41551c34081b5fcdc557a2e9f1d",
+        "question": [
+          "Show queries from dbt in the last 7 days"
+        ],
+        "sql": [
+          "SELECT\n  executed_by,\n  LEFT(statement_text, 200) AS query_preview,\n  try_divide(total_duration_ms, 1000) AS duration_sec,\n  start_time\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\n  AND client_application ILIKE '%dbt%'\nORDER BY start_time DESC\nLIMIT 20"
+        ]
+      },
+      {
+        "id": "809fad590ce04182917cc3b45eccb493",
+        "question": [
+          "Truncate long text for readable output"
+        ],
+        "sql": [
+          "SELECT\n  LEFT(statement_text, 200) AS query_preview,\n  LEFT(error_message, 200) AS error_preview\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\nLIMIT 10"
+        ]
+      },
+      {
+        "id": "98ef01323a2d4c729fcc4c126c252d08",
+        "question": [
+          "Compare query volume and avg duration across BI tools (Tableau, Power BI, dbt, SQL Editor)"
+        ],
+        "sql": [
+          "SELECT\n  client_application,\n  COUNT(*) AS query_count,\n  COUNT(DISTINCT executed_by) AS unique_users,\n  ROUND(try_divide(AVG(total_duration_ms), 1000), 2) AS avg_duration_sec,\n  try_divide(SUM(read_bytes), (1024*1024*1024)) AS total_read_gb\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\n  AND client_application IN (\n    'Tableau',\n    'Power BI',\n    'dbt',\n    'Databricks SQL Editor'\n  )\nGROUP BY client_application\nORDER BY query_count DESC"
+        ]
+      },
+      {
+        "id": "995a5bc63870426f912a1657c06de8f6",
+        "question": [
+          "Common client_application values and what they map to"
+        ],
+        "sql": [
+          "SELECT\n  client_application,\n  COUNT(*) AS query_count\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\n  AND client_application IS NOT NULL\nGROUP BY client_application\nORDER BY query_count DESC\nLIMIT 30"
+        ]
+      },
+      {
+        "id": "ae739d3371c74f9a8c78fbf6059560d0",
+        "question": [
+          "Show queries from Tableau in the last 7 days"
+        ],
+        "sql": [
+          "SELECT\n  executed_by,\n  LEFT(statement_text, 200) AS query_preview,\n  try_divide(total_duration_ms, 1000) AS duration_sec,\n  start_time\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\n  AND client_application ILIKE '%Tableau%'\nORDER BY start_time DESC\nLIMIT 20"
+        ]
+      },
+      {
+        "id": "b2e5c0ebccf44f2692bd4e25a2607bd7",
+        "question": [
+          "Show me the query breakdown by statement type"
+        ],
+        "sql": [
+          "SELECT\n  statement_type,\n  COUNT(*) AS query_count,\n  ROUND(\n    100.0 * COUNT(*) / SUM(COUNT(*)) OVER(),\n    1\n  ) AS pct,\n  ROUND(AVG(total_duration_ms) / 1000, 2) AS avg_duration_sec\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\nGROUP BY statement_type\nORDER BY query_count DESC"
+        ]
+      },
+      {
+        "id": "b7ddf526c31f49cead09557fd4a21586",
+        "question": [
+          "Calculate percentage with window function"
+        ],
+        "sql": [
+          "SELECT\n  statement_type,\n  COUNT(*) AS query_count,\n  ROUND(\n    100.0 * COUNT(*) / SUM(COUNT(*)) OVER(),\n    1\n  ) AS pct_of_total\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\nGROUP BY statement_type\nORDER BY query_count DESC"
+        ]
+      },
+      {
+        "id": "b83ae17c2bc547b78ab5ba240d49945b",
+        "question": [
+          "Show queries from notebooks vs dashboards vs jobs in the last 7 days"
+        ],
+        "sql": [
+          "SELECT\n  CASE\n    WHEN query_source.notebook_id IS NOT NULL THEN 'Notebook'\n    WHEN query_source.dashboard_id IS NOT NULL THEN 'Dashboard'\n    WHEN query_source.job_info.job_id IS NOT NULL THEN 'Job'\n    WHEN query_source.alert_id IS NOT NULL THEN 'Alert'\n    WHEN query_source.pipeline_info.pipeline_id IS NOT NULL THEN 'Pipeline'\n    ELSE 'Other'\n  END AS source_type,\n  COUNT(*) AS query_count,\n  COUNT(DISTINCT executed_by) AS unique_users,\n  ROUND(try_divide(AVG(total_duration_ms), 1000), 2) AS avg_duration_sec\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\nGROUP BY source_type\nORDER BY query_count DESC"
+        ]
+      },
+      {
+        "id": "c28035ce03074881974af9058cf6774f",
+        "question": [
+          "Convert bytes to GB"
+        ],
+        "sql": [
+          "SELECT\n  read_bytes / (1024*1024*1024) AS read_gb,\n  written_bytes / (1024*1024*1024) AS written_gb,\n  spilled_local_bytes / (1024*1024*1024) AS spill_gb,\n  shuffle_read_bytes / (1024*1024*1024) AS shuffle_gb\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\nLIMIT 10"
+        ]
+      },
+      {
+        "id": "c421d3d0c9b849d3a24128477aff6af0",
+        "question": [
+          "Safe division with try_divide to avoid divide-by-zero"
+        ],
+        "sql": [
+          "SELECT\n  try_divide(read_rows, produced_rows) AS scan_to_output_ratio,\n  try_divide(\n    SUM(CASE WHEN from_result_cache THEN 1 ELSE 0 END),\n    COUNT(*)\n  ) * 100 AS cache_hit_pct,\n  try_divide(spilled_local_bytes, read_bytes) * 100 AS spill_pct\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\nGROUP BY ALL\nLIMIT 10"
+        ]
+      },
+      {
+        "id": "d1a86ab1194c4fc3a123d4ac916e1477",
+        "question": [
+          "Filter by time range \u2014 show query counts for different periods"
+        ],
+        "sql": [
+          "SELECT\n  COUNT(*) AS total_queries,\n  SUM(CASE WHEN start_time >= current_date() - INTERVAL 1 DAY THEN 1 ELSE 0 END) AS last_1_day,\n  SUM(CASE WHEN start_time >= current_date() - INTERVAL 7 DAYS THEN 1 ELSE 0 END) AS last_7_days,\n  SUM(CASE WHEN start_time >= current_date() - INTERVAL 30 DAYS THEN 1 ELSE 0 END) AS last_30_days\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 30 DAYS"
+        ]
+      },
+      {
+        "id": "d7e58361781f454187d189c3d3ae1b08",
+        "question": [
+          "Show me the top data writers \u2014 who is writing the most data?"
+        ],
+        "sql": [
+          "SELECT\n  executed_by,\n  COUNT(*) AS write_queries,\n  SUM(written_bytes) / (1024*1024*1024) AS written_gb,\n  SUM(written_rows) AS total_rows_written\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\n  AND written_bytes > 0\nGROUP BY executed_by\nORDER BY written_gb DESC\nLIMIT 10"
+        ]
+      },
+      {
+        "id": "dd5392b0ed924a1e89e34c6547fced3a",
+        "question": [
+          "Group by hour of day for capacity planning"
+        ],
+        "sql": [
+          "SELECT\n  HOUR(start_time) AS hour_of_day,\n  COUNT(*) AS query_count,\n  ROUND(AVG(total_duration_ms) / 1000, 2) AS avg_sec\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\nGROUP BY HOUR(start_time)\nORDER BY hour_of_day"
+        ]
+      },
+      {
+        "id": "e8566a56a2cd4c8d95f176f1e6d02d80",
+        "question": [
+          "Show me the hourly query volume pattern for the last 7 days"
+        ],
+        "sql": [
+          "SELECT\n  HOUR(start_time) AS hour_of_day,\n  COUNT(*) AS query_count,\n  ROUND(AVG(total_duration_ms) / 1000, 2) AS avg_duration_sec,\n  ROUND(MAX(total_duration_ms) / 1000, 2) AS max_duration_sec\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\nGROUP BY HOUR(start_time)\nORDER BY hour_of_day"
+        ]
+      },
+      {
+        "id": "ecce1e6a152e4ae7b1ee20f7cb94f580",
+        "question": [
+          "Which queries are waiting the longest for compute to start?"
+        ],
+        "sql": [
+          "SELECT\n  executed_by,\n  compute.warehouse_id,\n  LEFT(statement_text, 200) AS query_preview,\n  waiting_for_compute_duration_ms / 1000 AS compute_wait_sec,\n  waiting_at_capacity_duration_ms / 1000 AS capacity_wait_sec,\n  total_duration_ms / 1000 AS total_sec\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\n  AND (\n    waiting_for_compute_duration_ms > 30000\n    OR waiting_at_capacity_duration_ms > 30000\n  )\nORDER BY\n  waiting_for_compute_duration_ms + waiting_at_capacity_duration_ms DESC\nLIMIT 20"
+        ]
+      },
+      {
+        "id": "ed7d612c3235478694801ad5fa21369e",
+        "question": [
+          "Find duplicate or repeated queries"
+        ],
+        "sql": [
+          "SELECT\n  LEFT(statement_text, 200) AS query_preview,\n  COUNT(*) AS times_run,\n  COUNT(DISTINCT executed_by) AS unique_users,\n  ROUND(AVG(total_duration_ms) / 1000, 2) AS avg_sec,\n  SUM(CASE WHEN from_result_cache THEN 1 ELSE 0 END) AS cache_hits\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\n  AND execution_status = 'FINISHED'\n  AND statement_type = 'SELECT'\nGROUP BY LEFT(statement_text, 200)\nHAVING COUNT(*) > 5\nORDER BY times_run DESC\nLIMIT 20"
+        ]
+      },
+      {
+        "id": "fbf233f8942443b9b0e357b619e65f38",
+        "question": [
+          "Show queries from Power BI in the last 7 days"
+        ],
+        "sql": [
+          "SELECT\n  executed_by,\n  LEFT(statement_text, 200) AS query_preview,\n  try_divide(total_duration_ms, 1000) AS duration_sec,\n  start_time\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\n  AND client_application ILIKE '%Power BI%'\nORDER BY start_time DESC\nLIMIT 20"
+        ]
+      }
+    ]
+  },
+  "benchmarks": {
+    "questions": [
+      {
+        "id": "01fe72d0cc464059a19ba257a376da7f",
+        "question": [
+          "Show the top 10 queries with the highest ratio of read_rows to produced_rows in the last 7 days."
+        ],
+        "answer": [
+          {
+            "format": "SQL",
+            "content": [
+              "SELECT\n  executed_by,\n  LEFT(statement_text, 200) AS query_preview,\n  read_rows,\n  produced_rows,\n  try_divide(read_rows, produced_rows) AS scan_to_output_ratio\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\n  AND execution_status = 'FINISHED'\n  AND produced_rows > 0\n  AND read_rows > 0\nORDER BY try_divide(read_rows, produced_rows) DESC\nLIMIT 10"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "0aa3ec1fa5cb4fdea3dd25adf9dd6ebc",
+        "question": [
+          "How many queries ran yesterday?"
+        ],
+        "answer": [
+          {
+            "format": "SQL",
+            "content": [
+              "SELECT\n  COUNT(*) AS total_queries\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 1 DAY\n  AND start_time < current_date()"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "47865e21e1584d3f85f8b768007d13f0",
+        "question": [
+          "What are the top 10 most common error messages for failed queries in the last 7 days?"
+        ],
+        "answer": [
+          {
+            "format": "SQL",
+            "content": [
+              "SELECT\n  error_message,\n  COUNT(*) AS error_count\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\n  AND execution_status = 'FAILED'\n  AND error_message IS NOT NULL\nGROUP BY error_message\nORDER BY error_count DESC\nLIMIT 10"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "660ce2164af24a50b7261243ef39fbf8",
+        "question": [
+          "What percentage of queries in the last 7 days were served from the result cache?"
+        ],
+        "answer": [
+          {
+            "format": "SQL",
+            "content": [
+              "SELECT\n  ROUND(\n    try_divide(\n      SUM(CASE WHEN from_result_cache THEN 1 ELSE 0 END) * 100.0,\n      COUNT(*)\n    ),\n    1\n  ) AS result_cache_hit_pct\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "7eb993605f2449888d50b0fef719a810",
+        "question": [
+          "What is the count of queries by execution_status in the last 7 days?"
+        ],
+        "answer": [
+          {
+            "format": "SQL",
+            "content": [
+              "SELECT\n  execution_status,\n  COUNT(*) AS query_count\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\nGROUP BY execution_status\nORDER BY query_count DESC"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "7f7bece5f84d45cc8e4b826600f283d2",
+        "question": [
+          "Which users run the most queries in the last 7 days? Show the top 10 by query count."
+        ],
+        "answer": [
+          {
+            "format": "SQL",
+            "content": [
+              "SELECT\n  executed_by,\n  COUNT(*) AS query_count\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\nGROUP BY executed_by\nORDER BY query_count DESC\nLIMIT 10"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "d2fae9433a8c4777a211a1011d6c0ab1",
+        "question": [
+          "What are the top 10 slowest queries in the last 7 days? Show the user, warehouse, query text, and duration in seconds."
+        ],
+        "answer": [
+          {
+            "format": "SQL",
+            "content": [
+              "SELECT\n  executed_by,\n  compute.warehouse_id,\n  LEFT(statement_text, 200) AS query_preview,\n  try_divide(total_duration_ms, 1000) AS duration_sec\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\n  AND execution_status = 'FINISHED'\nORDER BY total_duration_ms DESC\nLIMIT 10"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "d3842af849f941fa9063ae23cd547e16",
+        "question": [
+          "Which client_application values have the most queries in the last 7 days? Show the top 10 with query count and unique users. Filter out null client_application values."
+        ],
+        "answer": [
+          {
+            "format": "SQL",
+            "content": [
+              "SELECT\n  client_application,\n  COUNT(*) AS query_count,\n  COUNT(DISTINCT executed_by) AS unique_users\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\n  AND client_application IS NOT NULL\nGROUP BY client_application\nORDER BY query_count DESC\nLIMIT 10"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "f00790bc61af47479eec1b6a03335229",
+        "question": [
+          "Show the top 10 queries that spilled to disk in the last 7 days. Include the user, query text, spill size in GB, and duration in seconds."
+        ],
+        "answer": [
+          {
+            "format": "SQL",
+            "content": [
+              "SELECT\n  executed_by,\n  LEFT(statement_text, 200) AS query_preview,\n  try_divide(spilled_local_bytes, (1024*1024*1024)) AS spill_gb,\n  try_divide(total_duration_ms, 1000) AS duration_sec\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\n  AND spilled_local_bytes > 0\nORDER BY spilled_local_bytes DESC\nLIMIT 10"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "f8ca135d2c694c228e030ad17136b3b8",
+        "question": [
+          "Which warehouses have the most queries in the last 7 days? Show the top 10 with query count and unique users."
+        ],
+        "answer": [
+          {
+            "format": "SQL",
+            "content": [
+              "SELECT\n  compute.warehouse_id,\n  COUNT(*) AS query_count,\n  COUNT(DISTINCT executed_by) AS unique_users\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\n  AND compute.warehouse_id IS NOT NULL\nGROUP BY compute.warehouse_id\nORDER BY query_count DESC\nLIMIT 10"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
