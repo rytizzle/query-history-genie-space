@@ -364,7 +364,7 @@
   "instructions": {
     "text_instructions": [
       {
-        "id": "2c0d982e4b354e5fbafffc663a0350ad",
+        "id": "f4d549ae1f37453fb970c9c756012c7f",
         "content": [
           "=== TIME FILTERING (REQUIRED) ===\nAlways filter on start_time when querying \u2014 this table can be very large.\nDefault to the last 7 days if the user doesn't specify a time range:\n  start_time >= current_date() - INTERVAL 7 DAYS",
           "\n\n",
@@ -386,67 +386,24 @@
           "\n\n",
           "=== CACHING ===\nfrom_result_cache = true means the query was served from cache with zero compute cost.\nread_io_cache_percent shows what % of data was served from the IO cache.\nUse both for cache hit rate analysis.",
           "\n\n",
-          "=== DISPLAY BEST PRACTICES ===\n\n- Truncate statement_text to 200 characters:\n    LEFT(statement_text, 200) AS query_preview\n\n- Group by user using the executed_by column (contains email address).\n\n- For warehouse utilization, group by:\n    compute.warehouse_id and DATE(start_time)\n  to see daily patterns."
+          "=== DISPLAY BEST PRACTICES ===\n\n- Truncate statement_text to 200 characters:\n    LEFT(statement_text, 200) AS query_preview\n\n- Group by user using the executed_by column (contains email address).\n\n- For warehouse utilization, group by:\n    compute.warehouse_id and DATE(start_time)\n  to see daily patterns.",
+          "\n\n",
+          "=== QUERY SOURCE ATTRIBUTION ===\nWhen the user asks about query sources, origins, or where queries come from (notebooks, dashboards, jobs, Genie, alerts, pipelines), use the query_source struct \u2014 NOT client_application.\n\nclient_application tells you WHICH TOOL connected (Tableau, Power BI, dbt).\nquery_source tells you WHICH DATABRICKS ENTITY triggered the query.\n\nTo classify query origin, use this CASE WHEN pattern:\n  CASE\n    WHEN query_source.notebook_id IS NOT NULL THEN 'Notebook'\n    WHEN query_source.dashboard_id IS NOT NULL THEN 'AI/BI Dashboard'\n    WHEN query_source.legacy_dashboard_id IS NOT NULL THEN 'Legacy Dashboard'\n    WHEN query_source.job_info.job_id IS NOT NULL THEN 'Job'\n    WHEN query_source.alert_id IS NOT NULL THEN 'Alert'\n    WHEN query_source.genie_space_id IS NOT NULL THEN 'Genie Space'\n    WHEN query_source.pipeline_info.pipeline_id IS NOT NULL THEN 'DLT Pipeline'\n    WHEN query_source.sql_query_id IS NOT NULL THEN 'Saved SQL Query'\n    ELSE 'Other / Ad-hoc'\n  END AS query_source_type\n\nA single query can have MULTIPLE source IDs populated (e.g., a Job triggers a Notebook which runs a SQL Query). The struct is NOT sorted by execution order.\n\nCommon user questions that need query_source:\n  - 'How many queries come from notebooks vs dashboards?'\n  - 'Which Genie spaces generate the most queries?'\n  - 'What jobs are running the heaviest queries?'\n  - 'Show me dashboard-driven query volume'\n  - 'Which notebooks are the most active?'"
         ]
       }
     ],
     "example_question_sqls": [
       {
-        "id": "0b5619c269c3451f84fda96184d11ab6",
+        "id": "0b9b16ed013449eb8ac0ca496687d466",
         "question": [
-          "Safe division with try_divide to avoid divide-by-zero"
+          "Which Genie spaces generate the most queries in the last 7 days?"
         ],
         "sql": [
-          "SELECT\n  try_divide(read_rows, produced_rows) AS scan_to_output_ratio,\n  try_divide(\n    SUM(CASE WHEN from_result_cache THEN 1 ELSE 0 END),\n    COUNT(*)\n  ) * 100 AS cache_hit_pct,\n  try_divide(spilled_local_bytes, read_bytes) * 100 AS spill_pct\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\nGROUP BY ALL\nLIMIT 10"
+          "SELECT\n  query_source.genie_space_id,\n  COUNT(*) AS query_count,\n  COUNT(DISTINCT executed_by) AS unique_users,\n  ROUND(try_divide(AVG(total_duration_ms), 1000), 2) AS avg_duration_sec\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\n  AND query_source.genie_space_id IS NOT NULL\nGROUP BY query_source.genie_space_id\nORDER BY query_count DESC\nLIMIT 10"
         ]
       },
       {
-        "id": "12d2e0edcc574588bd69eeb0829298f8",
-        "question": [
-          "Which queries read the most data?"
-        ],
-        "sql": [
-          "SELECT\n  executed_by,\n  LEFT(statement_text, 200) AS query_preview,\n  read_bytes / (1024*1024*1024) AS read_gb,\n  read_rows,\n  read_files,\n  read_partitions,\n  total_duration_ms / 1000 AS duration_sec\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\n  AND execution_status = 'FINISHED'\nORDER BY read_bytes DESC\nLIMIT 10"
-        ]
-      },
-      {
-        "id": "1dcfd00dd1a34d2997da28c53c9262cf",
-        "question": [
-          "What is the IO cache hit rate by warehouse?"
-        ],
-        "sql": [
-          "SELECT\n  compute.warehouse_id,\n  COUNT(*) AS query_count,\n  ROUND(AVG(read_io_cache_percent), 1) AS avg_io_cache_pct,\n  ROUND(\n    100.0 * SUM(CASE WHEN from_result_cache THEN 1 ELSE 0 END) / COUNT(*),\n    1\n  ) AS result_cache_hit_pct\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\n  AND execution_status = 'FINISHED'\nGROUP BY compute.warehouse_id\nORDER BY query_count DESC"
-        ]
-      },
-      {
-        "id": "1ff38ca5eb9847c2bc33d807dff1a8c9",
-        "question": [
-          "Calculate percentage with window function"
-        ],
-        "sql": [
-          "SELECT\n  statement_type,\n  COUNT(*) AS query_count,\n  ROUND(\n    100.0 * COUNT(*) / SUM(COUNT(*)) OVER(),\n    1\n  ) AS pct_of_total\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\nGROUP BY statement_type\nORDER BY query_count DESC"
-        ]
-      },
-      {
-        "id": "31fe420be70a40cabaef4be1af0ffa5a",
-        "question": [
-          "Show me the query breakdown by statement type"
-        ],
-        "sql": [
-          "SELECT\n  statement_type,\n  COUNT(*) AS query_count,\n  ROUND(\n    100.0 * COUNT(*) / SUM(COUNT(*)) OVER(),\n    1\n  ) AS pct,\n  ROUND(AVG(total_duration_ms) / 1000, 2) AS avg_duration_sec\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\nGROUP BY statement_type\nORDER BY query_count DESC"
-        ]
-      },
-      {
-        "id": "32f051c23ebb434489df4465803b702d",
-        "question": [
-          "Show queries from notebooks vs dashboards vs jobs in the last 7 days"
-        ],
-        "sql": [
-          "SELECT\n  CASE\n    WHEN query_source.notebook_id IS NOT NULL THEN 'Notebook'\n    WHEN query_source.dashboard_id IS NOT NULL THEN 'Dashboard'\n    WHEN query_source.job_info.job_id IS NOT NULL THEN 'Job'\n    WHEN query_source.alert_id IS NOT NULL THEN 'Alert'\n    WHEN query_source.pipeline_info.pipeline_id IS NOT NULL THEN 'Pipeline'\n    ELSE 'Other'\n  END AS source_type,\n  COUNT(*) AS query_count,\n  COUNT(DISTINCT executed_by) AS unique_users,\n  ROUND(try_divide(AVG(total_duration_ms), 1000), 2) AS avg_duration_sec\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\nGROUP BY source_type\nORDER BY query_count DESC"
-        ]
-      },
-      {
-        "id": "3562a5a0c7964ee493499b6bb9e94d86",
+        "id": "0ccdbfd6fe78445787a30ba50a03ed2e",
         "question": [
           "Show queries from Tableau in the last 7 days"
         ],
@@ -455,142 +412,7 @@
         ]
       },
       {
-        "id": "3674906473f44cdd8ad245e4c73cd90d",
-        "question": [
-          "Show me the hourly query volume pattern for the last 7 days"
-        ],
-        "sql": [
-          "SELECT\n  HOUR(start_time) AS hour_of_day,\n  COUNT(*) AS query_count,\n  ROUND(AVG(total_duration_ms) / 1000, 2) AS avg_duration_sec,\n  ROUND(MAX(total_duration_ms) / 1000, 2) AS max_duration_sec\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\nGROUP BY HOUR(start_time)\nORDER BY hour_of_day"
-        ]
-      },
-      {
-        "id": "3b26237172d74e5895720e3a94cdbed7",
-        "question": [
-          "Which dashboards generate the most queries?"
-        ],
-        "sql": [
-          "SELECT\n  query_source.dashboard_id,\n  COUNT(*) AS query_count,\n  COUNT(DISTINCT executed_by) AS unique_users,\n  ROUND(AVG(total_duration_ms) / 1000, 2) AS avg_duration_sec,\n  SUM(read_bytes) / (1024*1024*1024) AS total_read_gb\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\n  AND query_source.dashboard_id IS NOT NULL\nGROUP BY query_source.dashboard_id\nORDER BY query_count DESC\nLIMIT 10"
-        ]
-      },
-      {
-        "id": "41f18c5112c648178dda2dacdb730ced",
-        "question": [
-          "Count with conditional aggregation (CASE WHEN)"
-        ],
-        "sql": [
-          "SELECT\n  DATE(start_time) AS query_date,\n  COUNT(*) AS total,\n  SUM(CASE WHEN execution_status = 'FINISHED' THEN 1 ELSE 0 END) AS succeeded,\n  SUM(CASE WHEN execution_status = 'FAILED' THEN 1 ELSE 0 END) AS failed,\n  SUM(CASE WHEN execution_status = 'CANCELED' THEN 1 ELSE 0 END) AS canceled,\n  SUM(CASE WHEN from_result_cache THEN 1 ELSE 0 END) AS from_cache,\n  SUM(CASE WHEN spilled_local_bytes > 0 THEN 1 ELSE 0 END) AS spilled\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\nGROUP BY DATE(start_time)\nORDER BY query_date"
-        ]
-      },
-      {
-        "id": "422d376ad491464ea3423b132841527d",
-        "question": [
-          "Show queries from Power BI in the last 7 days"
-        ],
-        "sql": [
-          "SELECT\n  executed_by,\n  LEFT(statement_text, 200) AS query_preview,\n  try_divide(total_duration_ms, 1000) AS duration_sec,\n  start_time\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\n  AND client_application ILIKE '%Power BI%'\nORDER BY start_time DESC\nLIMIT 20"
-        ]
-      },
-      {
-        "id": "4bf8eaa04ad54b19bdb2ae858a8e61bd",
-        "question": [
-          "Which queries are waiting the longest for compute to start?"
-        ],
-        "sql": [
-          "SELECT\n  executed_by,\n  compute.warehouse_id,\n  LEFT(statement_text, 200) AS query_preview,\n  waiting_for_compute_duration_ms / 1000 AS compute_wait_sec,\n  waiting_at_capacity_duration_ms / 1000 AS capacity_wait_sec,\n  total_duration_ms / 1000 AS total_sec\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\n  AND (\n    waiting_for_compute_duration_ms > 30000\n    OR waiting_at_capacity_duration_ms > 30000\n  )\nORDER BY\n  waiting_for_compute_duration_ms + waiting_at_capacity_duration_ms DESC\nLIMIT 20"
-        ]
-      },
-      {
-        "id": "4d5cd1da760e4bee88debac4cad8d0b4",
-        "question": [
-          "Convert bytes to GB"
-        ],
-        "sql": [
-          "SELECT\n  read_bytes / (1024*1024*1024) AS read_gb,\n  written_bytes / (1024*1024*1024) AS written_gb,\n  spilled_local_bytes / (1024*1024*1024) AS spill_gb,\n  shuffle_read_bytes / (1024*1024*1024) AS shuffle_gb\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\nLIMIT 10"
-        ]
-      },
-      {
-        "id": "5af5d9aa2ac44e1e8014abf073e6a3e3",
-        "question": [
-          "Common client_application values and what they map to"
-        ],
-        "sql": [
-          "SELECT\n  client_application,\n  COUNT(*) AS query_count\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\n  AND client_application IS NOT NULL\nGROUP BY client_application\nORDER BY query_count DESC\nLIMIT 30"
-        ]
-      },
-      {
-        "id": "5b60594172574383847caa218efe196c",
-        "question": [
-          "Truncate long text for readable output"
-        ],
-        "sql": [
-          "SELECT\n  LEFT(statement_text, 200) AS query_preview,\n  LEFT(error_message, 200) AS error_preview\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\nLIMIT 10"
-        ]
-      },
-      {
-        "id": "7a25f84e8c734bb1977805bd40ad7f1d",
-        "question": [
-          "Group by hour of day for capacity planning"
-        ],
-        "sql": [
-          "SELECT\n  HOUR(start_time) AS hour_of_day,\n  COUNT(*) AS query_count,\n  ROUND(AVG(total_duration_ms) / 1000, 2) AS avg_sec\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\nGROUP BY HOUR(start_time)\nORDER BY hour_of_day"
-        ]
-      },
-      {
-        "id": "7c4e0c16c5824f1fa178526ca1287b74",
-        "question": [
-          "Access struct columns (compute, query_source)"
-        ],
-        "sql": [
-          "SELECT\n  compute.warehouse_id,\n  compute.type AS compute_type,\n  query_source.dashboard_id,\n  query_source.legacy_dashboard_id,\n  query_source.notebook_id,\n  query_source.alert_id,\n  query_source.sql_query_id,\n  query_source.genie_space_id,\n  query_source.job_info.job_id,\n  query_source.job_info.job_run_id,\n  query_source.pipeline_info.pipeline_id,\n  query_source.pipeline_info.update_id\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\nLIMIT 10"
-        ]
-      },
-      {
-        "id": "7d12fa984a874fa99bb3efb117a49e17",
-        "question": [
-          "Filter queries by a specific client_application using ILIKE pattern matching"
-        ],
-        "sql": [
-          "SELECT\n  client_application,\n  executed_by,\n  LEFT(statement_text, 200) AS query_preview,\n  try_divide(total_duration_ms, 1000) AS duration_sec\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\n  AND client_application ILIKE '%Databricks%'\nORDER BY total_duration_ms DESC\nLIMIT 20"
-        ]
-      },
-      {
-        "id": "8a7fe22ce59749639a47a9a82914748a",
-        "question": [
-          "Show queries from dbt in the last 7 days"
-        ],
-        "sql": [
-          "SELECT\n  executed_by,\n  LEFT(statement_text, 200) AS query_preview,\n  try_divide(total_duration_ms, 1000) AS duration_sec,\n  start_time\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\n  AND client_application ILIKE '%dbt%'\nORDER BY start_time DESC\nLIMIT 20"
-        ]
-      },
-      {
-        "id": "a919ad7670bc4c44922231d58ea39bd0",
-        "question": [
-          "Compare query volume and avg duration across BI tools (Tableau, Power BI, dbt, SQL Editor)"
-        ],
-        "sql": [
-          "SELECT\n  client_application,\n  COUNT(*) AS query_count,\n  COUNT(DISTINCT executed_by) AS unique_users,\n  ROUND(try_divide(AVG(total_duration_ms), 1000), 2) AS avg_duration_sec,\n  try_divide(SUM(read_bytes), (1024*1024*1024)) AS total_read_gb\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\n  AND client_application IN (\n    'Tableau',\n    'Power BI',\n    'dbt',\n    'Databricks SQL Editor'\n  )\nGROUP BY client_application\nORDER BY query_count DESC"
-        ]
-      },
-      {
-        "id": "aae00eaaf62e434fbd712b116c97d465",
-        "question": [
-          "Find duplicate or repeated queries"
-        ],
-        "sql": [
-          "SELECT\n  LEFT(statement_text, 200) AS query_preview,\n  COUNT(*) AS times_run,\n  COUNT(DISTINCT executed_by) AS unique_users,\n  ROUND(AVG(total_duration_ms) / 1000, 2) AS avg_sec,\n  SUM(CASE WHEN from_result_cache THEN 1 ELSE 0 END) AS cache_hits\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\n  AND execution_status = 'FINISHED'\n  AND statement_type = 'SELECT'\nGROUP BY LEFT(statement_text, 200)\nHAVING COUNT(*) > 5\nORDER BY times_run DESC\nLIMIT 20"
-        ]
-      },
-      {
-        "id": "e7ff7658d7cd4185ad01aa550f7f6c03",
-        "question": [
-          "Show me the top data writers \u2014 who is writing the most data?"
-        ],
-        "sql": [
-          "SELECT\n  executed_by,\n  COUNT(*) AS write_queries,\n  SUM(written_bytes) / (1024*1024*1024) AS written_gb,\n  SUM(written_rows) AS total_rows_written\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\n  AND written_bytes > 0\nGROUP BY executed_by\nORDER BY written_gb DESC\nLIMIT 10"
-        ]
-      },
-      {
-        "id": "eed95b87f8fb4ba98004404de9719980",
+        "id": "203df698a5994345bf805ab37e2578c9",
         "question": [
           "What is the daily query trend over the last 30 days?"
         ],
@@ -599,7 +421,160 @@
         ]
       },
       {
-        "id": "f033b6c16975407d97f071ae3b7df734",
+        "id": "23278d13286b4afd87393720b1d506ba",
+        "question": [
+          "Query volume breakdown by source type (notebooks, dashboards, jobs, Genie, etc.)"
+        ],
+        "sql": [
+          "SELECT\n  CASE\n    WHEN query_source.notebook_id IS NOT NULL THEN 'Notebook'\n    WHEN query_source.dashboard_id IS NOT NULL THEN 'AI/BI Dashboard'\n    WHEN query_source.legacy_dashboard_id IS NOT NULL THEN 'Legacy Dashboard'\n    WHEN query_source.job_info.job_id IS NOT NULL THEN 'Job'\n    WHEN query_source.alert_id IS NOT NULL THEN 'Alert'\n    WHEN query_source.genie_space_id IS NOT NULL THEN 'Genie Space'\n    WHEN query_source.pipeline_info.pipeline_id IS NOT NULL THEN 'DLT Pipeline'\n    WHEN query_source.sql_query_id IS NOT NULL THEN 'Saved SQL Query'\n    ELSE 'Other / Ad-hoc'\n  END AS query_source_type,\n  COUNT(*) AS query_count,\n  COUNT(DISTINCT executed_by) AS unique_users,\n  ROUND(try_divide(AVG(total_duration_ms), 1000), 2) AS avg_duration_sec\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\nGROUP BY query_source_type\nORDER BY query_count DESC"
+        ]
+      },
+      {
+        "id": "234f007f25f24ea6815f51b39dad4972",
+        "question": [
+          "Which jobs run the heaviest queries? Show top 10 by total data read."
+        ],
+        "sql": [
+          "SELECT\n  query_source.job_info.job_id,\n  COUNT(*) AS query_count,\n  ROUND(try_divide(AVG(total_duration_ms), 1000), 2) AS avg_duration_sec,\n  try_divide(SUM(read_bytes), (1024*1024*1024)) AS total_read_gb\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\n  AND query_source.job_info.job_id IS NOT NULL\nGROUP BY query_source.job_info.job_id\nORDER BY total_read_gb DESC\nLIMIT 10"
+        ]
+      },
+      {
+        "id": "2a692d7966ff4de9ae250f282a120a24",
+        "question": [
+          "Truncate long text for readable output"
+        ],
+        "sql": [
+          "SELECT\n  LEFT(statement_text, 200) AS query_preview,\n  LEFT(error_message, 200) AS error_preview\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\nLIMIT 10"
+        ]
+      },
+      {
+        "id": "2c15aa6c11514fd393e20ae4504a24e7",
+        "question": [
+          "Duration breakdown \u2014 where is time spent?"
+        ],
+        "sql": [
+          "SELECT\n  executed_by,\n  LEFT(statement_text, 200) AS query_preview,\n  waiting_for_compute_duration_ms / 1000 AS compute_wait_sec,\n  waiting_at_capacity_duration_ms / 1000 AS queue_wait_sec,\n  compilation_duration_ms / 1000 AS compile_sec,\n  execution_duration_ms / 1000 AS exec_sec,\n  result_fetch_duration_ms / 1000 AS fetch_sec,\n  total_duration_ms / 1000 AS total_sec\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\n  AND execution_status = 'FINISHED'\nORDER BY total_duration_ms DESC\nLIMIT 10"
+        ]
+      },
+      {
+        "id": "2d084ff061a34763a2e6a7e4c8982884",
+        "question": [
+          "Show queries from Power BI in the last 7 days"
+        ],
+        "sql": [
+          "SELECT\n  executed_by,\n  LEFT(statement_text, 200) AS query_preview,\n  try_divide(total_duration_ms, 1000) AS duration_sec,\n  start_time\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\n  AND client_application ILIKE '%Power BI%'\nORDER BY start_time DESC\nLIMIT 20"
+        ]
+      },
+      {
+        "id": "2e19643a6d4f440bb99aa56889fb9b7e",
+        "question": [
+          "What is the IO cache hit rate by warehouse?"
+        ],
+        "sql": [
+          "SELECT\n  compute.warehouse_id,\n  COUNT(*) AS query_count,\n  ROUND(AVG(read_io_cache_percent), 1) AS avg_io_cache_pct,\n  ROUND(\n    100.0 * SUM(CASE WHEN from_result_cache THEN 1 ELSE 0 END) / COUNT(*),\n    1\n  ) AS result_cache_hit_pct\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\n  AND execution_status = 'FINISHED'\nGROUP BY compute.warehouse_id\nORDER BY query_count DESC"
+        ]
+      },
+      {
+        "id": "370ef7965db042018ec8826a256e560d",
+        "question": [
+          "Which notebooks are the most active in the last 7 days?"
+        ],
+        "sql": [
+          "SELECT\n  query_source.notebook_id,\n  COUNT(*) AS query_count,\n  COUNT(DISTINCT executed_by) AS unique_users,\n  ROUND(try_divide(AVG(total_duration_ms), 1000), 2) AS avg_duration_sec,\n  try_divide(SUM(read_bytes), (1024*1024*1024)) AS total_read_gb\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\n  AND query_source.notebook_id IS NOT NULL\nGROUP BY query_source.notebook_id\nORDER BY query_count DESC\nLIMIT 10"
+        ]
+      },
+      {
+        "id": "4169c9349b8441f9ad81bc382e50514f",
+        "question": [
+          "Show queries from dbt in the last 7 days"
+        ],
+        "sql": [
+          "SELECT\n  executed_by,\n  LEFT(statement_text, 200) AS query_preview,\n  try_divide(total_duration_ms, 1000) AS duration_sec,\n  start_time\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\n  AND client_application ILIKE '%dbt%'\nORDER BY start_time DESC\nLIMIT 20"
+        ]
+      },
+      {
+        "id": "4398c107a40d47569e6857ab1450832d",
+        "question": [
+          "Calculate percentage with window function"
+        ],
+        "sql": [
+          "SELECT\n  statement_type,\n  COUNT(*) AS query_count,\n  ROUND(\n    100.0 * COUNT(*) / SUM(COUNT(*)) OVER(),\n    1\n  ) AS pct_of_total\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\nGROUP BY statement_type\nORDER BY query_count DESC"
+        ]
+      },
+      {
+        "id": "595df6dec8544e8182521520165dfb89",
+        "question": [
+          "Show me the hourly query volume pattern for the last 7 days"
+        ],
+        "sql": [
+          "SELECT\n  HOUR(start_time) AS hour_of_day,\n  COUNT(*) AS query_count,\n  ROUND(AVG(total_duration_ms) / 1000, 2) AS avg_duration_sec,\n  ROUND(MAX(total_duration_ms) / 1000, 2) AS max_duration_sec\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\nGROUP BY HOUR(start_time)\nORDER BY hour_of_day"
+        ]
+      },
+      {
+        "id": "5d22e0fda7e94bc8a1bd17b9a4270808",
+        "question": [
+          "Safe division with try_divide to avoid divide-by-zero"
+        ],
+        "sql": [
+          "SELECT\n  try_divide(read_rows, produced_rows) AS scan_to_output_ratio,\n  try_divide(\n    SUM(CASE WHEN from_result_cache THEN 1 ELSE 0 END),\n    COUNT(*)\n  ) * 100 AS cache_hit_pct,\n  try_divide(spilled_local_bytes, read_bytes) * 100 AS spill_pct\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\nGROUP BY ALL\nLIMIT 10"
+        ]
+      },
+      {
+        "id": "685de0a8d5de488fb271141de7c47510",
+        "question": [
+          "Convert bytes to GB"
+        ],
+        "sql": [
+          "SELECT\n  read_bytes / (1024*1024*1024) AS read_gb,\n  written_bytes / (1024*1024*1024) AS written_gb,\n  spilled_local_bytes / (1024*1024*1024) AS spill_gb,\n  shuffle_read_bytes / (1024*1024*1024) AS shuffle_gb\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\nLIMIT 10"
+        ]
+      },
+      {
+        "id": "6a2f3aeb793e47eb876ee6650e7f1958",
+        "question": [
+          "Dashboard query volume \u2014 which dashboards drive the most queries?"
+        ],
+        "sql": [
+          "SELECT\n  COALESCE(query_source.dashboard_id, query_source.legacy_dashboard_id) AS dashboard_id,\n  CASE\n    WHEN query_source.dashboard_id IS NOT NULL THEN 'AI/BI'\n    ELSE 'Legacy'\n  END AS dashboard_type,\n  COUNT(*) AS query_count,\n  COUNT(DISTINCT executed_by) AS unique_viewers,\n  ROUND(try_divide(AVG(total_duration_ms), 1000), 2) AS avg_duration_sec\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\n  AND (query_source.dashboard_id IS NOT NULL OR query_source.legacy_dashboard_id IS NOT NULL)\nGROUP BY dashboard_id, dashboard_type\nORDER BY query_count DESC\nLIMIT 10"
+        ]
+      },
+      {
+        "id": "709e6c8f72774551ba002711a7402813",
+        "question": [
+          "Show me the top data writers \u2014 who is writing the most data?"
+        ],
+        "sql": [
+          "SELECT\n  executed_by,\n  COUNT(*) AS write_queries,\n  SUM(written_bytes) / (1024*1024*1024) AS written_gb,\n  SUM(written_rows) AS total_rows_written\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\n  AND written_bytes > 0\nGROUP BY executed_by\nORDER BY written_gb DESC\nLIMIT 10"
+        ]
+      },
+      {
+        "id": "7232e16abd644a0a9073214244e2bb9d",
+        "question": [
+          "Show me the query breakdown by statement type"
+        ],
+        "sql": [
+          "SELECT\n  statement_type,\n  COUNT(*) AS query_count,\n  ROUND(\n    100.0 * COUNT(*) / SUM(COUNT(*)) OVER(),\n    1\n  ) AS pct,\n  ROUND(AVG(total_duration_ms) / 1000, 2) AS avg_duration_sec\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\nGROUP BY statement_type\nORDER BY query_count DESC"
+        ]
+      },
+      {
+        "id": "81f74c37fd5f4d99a85aea199c1d8c1d",
+        "question": [
+          "Which dashboards generate the most queries?"
+        ],
+        "sql": [
+          "SELECT\n  query_source.dashboard_id,\n  COUNT(*) AS query_count,\n  COUNT(DISTINCT executed_by) AS unique_users,\n  ROUND(AVG(total_duration_ms) / 1000, 2) AS avg_duration_sec,\n  SUM(read_bytes) / (1024*1024*1024) AS total_read_gb\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\n  AND query_source.dashboard_id IS NOT NULL\nGROUP BY query_source.dashboard_id\nORDER BY query_count DESC\nLIMIT 10"
+        ]
+      },
+      {
+        "id": "87ee0fbc8a2e4966afcc78403004bba3",
+        "question": [
+          "Group by hour of day for capacity planning"
+        ],
+        "sql": [
+          "SELECT\n  HOUR(start_time) AS hour_of_day,\n  COUNT(*) AS query_count,\n  ROUND(AVG(total_duration_ms) / 1000, 2) AS avg_sec\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\nGROUP BY HOUR(start_time)\nORDER BY hour_of_day"
+        ]
+      },
+      {
+        "id": "9a410ef27fe34bd09381fe9ecf52c6a4",
         "question": [
           "Filter by time range \u2014 show query counts for different periods"
         ],
@@ -608,7 +583,34 @@
         ]
       },
       {
-        "id": "f3f0e212096c4b7a9ab6d732229b6619",
+        "id": "9f0a5410578e4f8abf41c75ad991f216",
+        "question": [
+          "Find duplicate or repeated queries"
+        ],
+        "sql": [
+          "SELECT\n  LEFT(statement_text, 200) AS query_preview,\n  COUNT(*) AS times_run,\n  COUNT(DISTINCT executed_by) AS unique_users,\n  ROUND(AVG(total_duration_ms) / 1000, 2) AS avg_sec,\n  SUM(CASE WHEN from_result_cache THEN 1 ELSE 0 END) AS cache_hits\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\n  AND execution_status = 'FINISHED'\n  AND statement_type = 'SELECT'\nGROUP BY LEFT(statement_text, 200)\nHAVING COUNT(*) > 5\nORDER BY times_run DESC\nLIMIT 20"
+        ]
+      },
+      {
+        "id": "aab68164c9264ecaba2f84bd6c72ece8",
+        "question": [
+          "Which queries read the most data?"
+        ],
+        "sql": [
+          "SELECT\n  executed_by,\n  LEFT(statement_text, 200) AS query_preview,\n  read_bytes / (1024*1024*1024) AS read_gb,\n  read_rows,\n  read_files,\n  read_partitions,\n  total_duration_ms / 1000 AS duration_sec\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\n  AND execution_status = 'FINISHED'\nORDER BY read_bytes DESC\nLIMIT 10"
+        ]
+      },
+      {
+        "id": "b06328ad4db342a98f9e1d96a50fefa1",
+        "question": [
+          "Show queries from notebooks vs dashboards vs jobs in the last 7 days"
+        ],
+        "sql": [
+          "SELECT\n  CASE\n    WHEN query_source.notebook_id IS NOT NULL THEN 'Notebook'\n    WHEN query_source.dashboard_id IS NOT NULL THEN 'Dashboard'\n    WHEN query_source.job_info.job_id IS NOT NULL THEN 'Job'\n    WHEN query_source.alert_id IS NOT NULL THEN 'Alert'\n    WHEN query_source.pipeline_info.pipeline_id IS NOT NULL THEN 'Pipeline'\n    ELSE 'Other'\n  END AS source_type,\n  COUNT(*) AS query_count,\n  COUNT(DISTINCT executed_by) AS unique_users,\n  ROUND(try_divide(AVG(total_duration_ms), 1000), 2) AS avg_duration_sec\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\nGROUP BY source_type\nORDER BY query_count DESC"
+        ]
+      },
+      {
+        "id": "b0b29d3893d9436ca104c2782bea4b9d",
         "question": [
           "Convert milliseconds to seconds and minutes"
         ],
@@ -617,12 +619,57 @@
         ]
       },
       {
-        "id": "f45cc87328b14fbc811043943a4f56af",
+        "id": "b1d490dc8da34662bed562d5147d5d83",
         "question": [
-          "Duration breakdown \u2014 where is time spent?"
+          "Common client_application values and what they map to"
         ],
         "sql": [
-          "SELECT\n  executed_by,\n  LEFT(statement_text, 200) AS query_preview,\n  waiting_for_compute_duration_ms / 1000 AS compute_wait_sec,\n  waiting_at_capacity_duration_ms / 1000 AS queue_wait_sec,\n  compilation_duration_ms / 1000 AS compile_sec,\n  execution_duration_ms / 1000 AS exec_sec,\n  result_fetch_duration_ms / 1000 AS fetch_sec,\n  total_duration_ms / 1000 AS total_sec\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\n  AND execution_status = 'FINISHED'\nORDER BY total_duration_ms DESC\nLIMIT 10"
+          "SELECT\n  client_application,\n  COUNT(*) AS query_count\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\n  AND client_application IS NOT NULL\nGROUP BY client_application\nORDER BY query_count DESC\nLIMIT 30"
+        ]
+      },
+      {
+        "id": "d2838dd25bea4c05a3a293030791cbfe",
+        "question": [
+          "Filter queries by a specific client_application using ILIKE pattern matching"
+        ],
+        "sql": [
+          "SELECT\n  client_application,\n  executed_by,\n  LEFT(statement_text, 200) AS query_preview,\n  try_divide(total_duration_ms, 1000) AS duration_sec\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\n  AND client_application ILIKE '%Databricks%'\nORDER BY total_duration_ms DESC\nLIMIT 20"
+        ]
+      },
+      {
+        "id": "defc32aa80a44e379a3fb56f766b092e",
+        "question": [
+          "Which queries are waiting the longest for compute to start?"
+        ],
+        "sql": [
+          "SELECT\n  executed_by,\n  compute.warehouse_id,\n  LEFT(statement_text, 200) AS query_preview,\n  waiting_for_compute_duration_ms / 1000 AS compute_wait_sec,\n  waiting_at_capacity_duration_ms / 1000 AS capacity_wait_sec,\n  total_duration_ms / 1000 AS total_sec\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\n  AND (\n    waiting_for_compute_duration_ms > 30000\n    OR waiting_at_capacity_duration_ms > 30000\n  )\nORDER BY\n  waiting_for_compute_duration_ms + waiting_at_capacity_duration_ms DESC\nLIMIT 20"
+        ]
+      },
+      {
+        "id": "ed78b2a1b9e34ea3aa520ec7b21f0fe8",
+        "question": [
+          "Compare query volume and avg duration across BI tools (Tableau, Power BI, dbt, SQL Editor)"
+        ],
+        "sql": [
+          "SELECT\n  client_application,\n  COUNT(*) AS query_count,\n  COUNT(DISTINCT executed_by) AS unique_users,\n  ROUND(try_divide(AVG(total_duration_ms), 1000), 2) AS avg_duration_sec,\n  try_divide(SUM(read_bytes), (1024*1024*1024)) AS total_read_gb\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\n  AND client_application IN (\n    'Tableau',\n    'Power BI',\n    'dbt',\n    'Databricks SQL Editor'\n  )\nGROUP BY client_application\nORDER BY query_count DESC"
+        ]
+      },
+      {
+        "id": "fa2952cb5b584ce9800df634e6daf138",
+        "question": [
+          "Access struct columns (compute, query_source)"
+        ],
+        "sql": [
+          "SELECT\n  compute.warehouse_id,\n  compute.type AS compute_type,\n  query_source.dashboard_id,\n  query_source.legacy_dashboard_id,\n  query_source.notebook_id,\n  query_source.alert_id,\n  query_source.sql_query_id,\n  query_source.genie_space_id,\n  query_source.job_info.job_id,\n  query_source.job_info.job_run_id,\n  query_source.pipeline_info.pipeline_id,\n  query_source.pipeline_info.update_id\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\nLIMIT 10"
+        ]
+      },
+      {
+        "id": "fd0a391d379444709352ef25d4d27de7",
+        "question": [
+          "Count with conditional aggregation (CASE WHEN)"
+        ],
+        "sql": [
+          "SELECT\n  DATE(start_time) AS query_date,\n  COUNT(*) AS total,\n  SUM(CASE WHEN execution_status = 'FINISHED' THEN 1 ELSE 0 END) AS succeeded,\n  SUM(CASE WHEN execution_status = 'FAILED' THEN 1 ELSE 0 END) AS failed,\n  SUM(CASE WHEN execution_status = 'CANCELED' THEN 1 ELSE 0 END) AS canceled,\n  SUM(CASE WHEN from_result_cache THEN 1 ELSE 0 END) AS from_cache,\n  SUM(CASE WHEN spilled_local_bytes > 0 THEN 1 ELSE 0 END) AS spilled\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\nGROUP BY DATE(start_time)\nORDER BY query_date"
         ]
       }
     ]
@@ -630,91 +677,7 @@
   "benchmarks": {
     "questions": [
       {
-        "id": "75e5f9a10ddc480ca3184c9a5608606f",
-        "question": [
-          "What is the daily query count trend over the last 30 days?"
-        ],
-        "answer": [
-          {
-            "format": "SQL",
-            "content": [
-              "SELECT\n  DATE(start_time) AS query_date,\n  COUNT(*) AS total_queries\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 30 DAYS\nGROUP BY DATE(start_time)\nORDER BY query_date"
-            ]
-          }
-        ]
-      },
-      {
-        "id": "7722d1cc44104fe7863550c4868fe4f6",
-        "question": [
-          "Which users run the most queries in the last 7 days? Show the top 10 by query count."
-        ],
-        "answer": [
-          {
-            "format": "SQL",
-            "content": [
-              "SELECT\n  executed_by,\n  COUNT(*) AS query_count\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\nGROUP BY executed_by\nORDER BY query_count DESC\nLIMIT 10"
-            ]
-          }
-        ]
-      },
-      {
-        "id": "7cdb6c93aa30408bbc0af1423f41f6a1",
-        "question": [
-          "Which client_application values have the most queries in the last 7 days? Show the top 10 with query count and unique users. Filter out null client_application values."
-        ],
-        "answer": [
-          {
-            "format": "SQL",
-            "content": [
-              "SELECT\n  client_application,\n  COUNT(*) AS query_count,\n  COUNT(DISTINCT executed_by) AS unique_users\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\n  AND client_application IS NOT NULL\nGROUP BY client_application\nORDER BY query_count DESC\nLIMIT 10"
-            ]
-          }
-        ]
-      },
-      {
-        "id": "92799c0feb08484ea1ae946009249b90",
-        "question": [
-          "How many distinct users ran queries in the last 7 days?"
-        ],
-        "answer": [
-          {
-            "format": "SQL",
-            "content": [
-              "SELECT\n  COUNT(DISTINCT executed_by) AS unique_users\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS"
-            ]
-          }
-        ]
-      },
-      {
-        "id": "c2c680258df84a96b065487a8b3d603f",
-        "question": [
-          "How many queries failed in the last 7 days?"
-        ],
-        "answer": [
-          {
-            "format": "SQL",
-            "content": [
-              "SELECT\n  COUNT(*) AS failed_queries\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\n  AND execution_status = 'FAILED'"
-            ]
-          }
-        ]
-      },
-      {
-        "id": "e30ed527e7824b1ab85048db04fa2c82",
-        "question": [
-          "What is the total data read in TB across all queries in the last 7 days?"
-        ],
-        "answer": [
-          {
-            "format": "SQL",
-            "content": [
-              "SELECT\n  ROUND(try_divide(SUM(read_bytes), (1024*1024*1024*1024)), 2) AS total_read_tb\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS"
-            ]
-          }
-        ]
-      },
-      {
-        "id": "e9ff49d5e5014baf9e9ef22ced3f7c64",
+        "id": "2677551e08de4397a5fc7a6e18bccf3a",
         "question": [
           "What is the count of queries by execution_status in the last 7 days?"
         ],
@@ -728,7 +691,35 @@
         ]
       },
       {
-        "id": "ec3ece1454be45edb82bd4845f1b4258",
+        "id": "2afeacc8e2c343e88ebfa33e0fd7dde9",
+        "question": [
+          "Which users run the most queries in the last 7 days? Show the top 10 by query count."
+        ],
+        "answer": [
+          {
+            "format": "SQL",
+            "content": [
+              "SELECT\n  executed_by,\n  COUNT(*) AS query_count\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\nGROUP BY executed_by\nORDER BY query_count DESC\nLIMIT 10"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "2c624b82277e491a9b8a980bebbfa592",
+        "question": [
+          "How many queries failed in the last 7 days?"
+        ],
+        "answer": [
+          {
+            "format": "SQL",
+            "content": [
+              "SELECT\n  COUNT(*) AS failed_queries\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\n  AND execution_status = 'FAILED'"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "3751bdbc0f054691bf139bd4e4dd705a",
         "question": [
           "What is the average query duration in seconds by warehouse in the last 7 days? Show the top 10."
         ],
@@ -742,7 +733,63 @@
         ]
       },
       {
-        "id": "f2ec296e36004130a76c7fab083102cf",
+        "id": "740f7727a62f4578aeb9bdb242730b48",
+        "question": [
+          "How many queries ran yesterday?"
+        ],
+        "answer": [
+          {
+            "format": "SQL",
+            "content": [
+              "SELECT\n  COUNT(*) AS total_queries\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 1 DAY\n  AND start_time < current_date()"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "7c34b4bfd9e842b1a1e0006c13534ac1",
+        "question": [
+          "How many distinct users ran queries in the last 7 days?"
+        ],
+        "answer": [
+          {
+            "format": "SQL",
+            "content": [
+              "SELECT\n  COUNT(DISTINCT executed_by) AS unique_users\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "8507530f5d08426284816b7c867ddacf",
+        "question": [
+          "Which client_application values have the most queries in the last 7 days? Show the top 10 with query count and unique users. Filter out null client_application values."
+        ],
+        "answer": [
+          {
+            "format": "SQL",
+            "content": [
+              "SELECT\n  client_application,\n  COUNT(*) AS query_count,\n  COUNT(DISTINCT executed_by) AS unique_users\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\n  AND client_application IS NOT NULL\nGROUP BY client_application\nORDER BY query_count DESC\nLIMIT 10"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "a0efd4c12ebd4ee4860213fa102c86b9",
+        "question": [
+          "What is the daily query count trend over the last 30 days?"
+        ],
+        "answer": [
+          {
+            "format": "SQL",
+            "content": [
+              "SELECT\n  DATE(start_time) AS query_date,\n  COUNT(*) AS total_queries\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 30 DAYS\nGROUP BY DATE(start_time)\nORDER BY query_date"
+            ]
+          }
+        ]
+      },
+      {
+        "id": "b1e730528efd4ced8efa0d41b7b45884",
         "question": [
           "Which warehouses have the most queries in the last 7 days? Show the top 10 with query count and unique users."
         ],
@@ -756,15 +803,15 @@
         ]
       },
       {
-        "id": "fe3682978fba4e51a357c999b75c4847",
+        "id": "c2d568f75bbe4c18b94dac86abf65b59",
         "question": [
-          "How many queries ran yesterday?"
+          "What is the total data read in TB across all queries in the last 7 days?"
         ],
         "answer": [
           {
             "format": "SQL",
             "content": [
-              "SELECT\n  COUNT(*) AS total_queries\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 1 DAY\n  AND start_time < current_date()"
+              "SELECT\n  ROUND(try_divide(SUM(read_bytes), (1024*1024*1024*1024)), 2) AS total_read_tb\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS"
             ]
           }
         ]
