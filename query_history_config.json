@@ -31,24 +31,12 @@
   ],
   "benchmarks": [
     {
-      "question": "What are the top 10 slowest queries in the last 7 days? Show the user, warehouse, query text, and duration in seconds.",
-      "sql_answer": "SELECT\n  executed_by,\n  compute.warehouse_id,\n  LEFT(statement_text, 200) AS query_preview,\n  try_divide(total_duration_ms, 1000) AS duration_sec\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\n  AND execution_status = 'FINISHED'\nORDER BY total_duration_ms DESC\nLIMIT 10"
-    },
-    {
       "question": "How many queries ran yesterday?",
       "sql_answer": "SELECT\n  COUNT(*) AS total_queries\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 1 DAY\n  AND start_time < current_date()"
     },
     {
       "question": "Which users run the most queries in the last 7 days? Show the top 10 by query count.",
       "sql_answer": "SELECT\n  executed_by,\n  COUNT(*) AS query_count\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\nGROUP BY executed_by\nORDER BY query_count DESC\nLIMIT 10"
-    },
-    {
-      "question": "What percentage of queries in the last 7 days were served from the result cache?",
-      "sql_answer": "SELECT\n  ROUND(\n    try_divide(\n      SUM(CASE WHEN from_result_cache THEN 1 ELSE 0 END) * 100.0,\n      COUNT(*)\n    ),\n    1\n  ) AS result_cache_hit_pct\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS"
-    },
-    {
-      "question": "Show the top 10 queries that spilled to disk in the last 7 days. Include the user, query text, spill size in GB, and duration in seconds.",
-      "sql_answer": "SELECT\n  executed_by,\n  LEFT(statement_text, 200) AS query_preview,\n  try_divide(spilled_local_bytes, (1024*1024*1024)) AS spill_gb,\n  try_divide(total_duration_ms, 1000) AS duration_sec\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\n  AND spilled_local_bytes > 0\nORDER BY spilled_local_bytes DESC\nLIMIT 10"
     },
     {
       "question": "What is the count of queries by execution_status in the last 7 days?",
@@ -59,16 +47,28 @@
       "sql_answer": "SELECT\n  compute.warehouse_id,\n  COUNT(*) AS query_count,\n  COUNT(DISTINCT executed_by) AS unique_users\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\n  AND compute.warehouse_id IS NOT NULL\nGROUP BY compute.warehouse_id\nORDER BY query_count DESC\nLIMIT 10"
     },
     {
-      "question": "What are the top 10 most common error messages for failed queries in the last 7 days?",
-      "sql_answer": "SELECT\n  error_message,\n  COUNT(*) AS error_count\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\n  AND execution_status = 'FAILED'\n  AND error_message IS NOT NULL\nGROUP BY error_message\nORDER BY error_count DESC\nLIMIT 10"
-    },
-    {
       "question": "Which client_application values have the most queries in the last 7 days? Show the top 10 with query count and unique users. Filter out null client_application values.",
       "sql_answer": "SELECT\n  client_application,\n  COUNT(*) AS query_count,\n  COUNT(DISTINCT executed_by) AS unique_users\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\n  AND client_application IS NOT NULL\nGROUP BY client_application\nORDER BY query_count DESC\nLIMIT 10"
     },
     {
-      "question": "Show the top 10 queries with the highest ratio of read_rows to produced_rows in the last 7 days.",
-      "sql_answer": "SELECT\n  executed_by,\n  LEFT(statement_text, 200) AS query_preview,\n  read_rows,\n  produced_rows,\n  try_divide(read_rows, produced_rows) AS scan_to_output_ratio\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\n  AND execution_status = 'FINISHED'\n  AND produced_rows > 0\n  AND read_rows > 0\nORDER BY try_divide(read_rows, produced_rows) DESC\nLIMIT 10"
+      "question": "What is the daily query count trend over the last 30 days?",
+      "sql_answer": "SELECT\n  DATE(start_time) AS query_date,\n  COUNT(*) AS total_queries\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 30 DAYS\nGROUP BY DATE(start_time)\nORDER BY query_date"
+    },
+    {
+      "question": "What is the average query duration in seconds by warehouse in the last 7 days? Show the top 10.",
+      "sql_answer": "SELECT\n  compute.warehouse_id,\n  ROUND(try_divide(AVG(total_duration_ms), 1000), 2) AS avg_duration_sec,\n  COUNT(*) AS query_count\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\n  AND execution_status = 'FINISHED'\n  AND compute.warehouse_id IS NOT NULL\nGROUP BY compute.warehouse_id\nORDER BY avg_duration_sec DESC\nLIMIT 10"
+    },
+    {
+      "question": "How many queries failed in the last 7 days?",
+      "sql_answer": "SELECT\n  COUNT(*) AS failed_queries\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\n  AND execution_status = 'FAILED'"
+    },
+    {
+      "question": "What is the total data read in TB across all queries in the last 7 days?",
+      "sql_answer": "SELECT\n  ROUND(try_divide(SUM(read_bytes), (1024*1024*1024*1024)), 2) AS total_read_tb\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS"
+    },
+    {
+      "question": "How many distinct users ran queries in the last 7 days?",
+      "sql_answer": "SELECT\n  COUNT(DISTINCT executed_by) AS unique_users\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS"
     }
   ],
   "sql_queries": [
