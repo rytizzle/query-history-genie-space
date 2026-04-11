@@ -481,7 +481,7 @@
           "=== RAW TABLE TIPS ===\n",
           "Structs: compute.warehouse_id, compute.type, query_source.notebook_id, query_source.dashboard_id, query_source.job_info.job_id (nested!), query_source.pipeline_info.pipeline_id (nested!).\n",
           "Convert bytes to GB: divide by 1024*1024*1024. Convert ms to seconds: divide by 1000.\n",
-          "Use try_divide() to avoid division by zero. Truncate SQL: LEFT(statement_text, 200).\n",
+          "Use try_divide() to avoid division by zero. \n",
           "execution_status: FINISHED, FAILED, CANCELED. Filter to FINISHED for perf analysis.\n",
           "Cost proxy: total_duration_ms \u2014 longer duration = more DBU consumption.\n",
           "For detail queries (individual slow/spill/failed queries), always include statement_id so users can look up the query in Query History.\n",
@@ -518,7 +518,7 @@
         ],
         "sql": [
           "SELECT executed_by,\n",
-          "  LEFT(statement_text, 200) AS query_preview,\n",
+          "  statement_text,\n",
           "  waiting_for_compute_duration_ms / 1000 AS compute_wait_sec,\n",
           "  waiting_at_capacity_duration_ms / 1000 AS queue_wait_sec,\n",
           "  compilation_duration_ms / 1000 AS compile_sec,\n",
@@ -576,7 +576,7 @@
         "sql": [
           "SELECT statement_id,\n",
           "  executed_by,\n",
-          "  LEFT(statement_text, 200) AS query_preview,\n",
+          "  statement_text,\n",
           "  try_divide(total_duration_ms, 1000) AS duration_sec,\n",
           "  try_divide(spilled_local_bytes, 1024*1024*1024) AS spilled_gb,\n",
           "  start_time\n",
@@ -648,7 +648,7 @@
         "sql": [
           "SELECT statement_id,\n",
           "  executed_by,\n",
-          "  LEFT(statement_text, 200) AS query_preview,\n",
+          "  statement_text,\n",
           "  read_bytes / (1024*1024*1024) AS read_gb,\n",
           "  read_rows,\n",
           "  total_duration_ms / 1000 AS duration_sec\n",
@@ -667,7 +667,7 @@
         "sql": [
           "SELECT executed_by,\n",
           "  compute.warehouse_id,\n",
-          "  LEFT(statement_text, 200) AS query_preview,\n",
+          "  statement_text,\n",
           "  waiting_for_compute_duration_ms / 1000 AS compute_wait_sec,\n",
           "  waiting_at_capacity_duration_ms / 1000 AS capacity_wait_sec,\n",
           "  total_duration_ms / 1000 AS total_sec\n",
@@ -731,7 +731,7 @@
           "Find duplicate or repeated queries"
         ],
         "sql": [
-          "SELECT LEFT(statement_text, 200) AS query_preview,\n",
+          "SELECT statement_text,\n",
           "  COUNT(*) AS times_run,\n",
           "  COUNT(DISTINCT executed_by) AS unique_users,\n",
           "  ROUND(AVG(total_duration_ms) / 1000, 2) AS avg_sec,\n",
@@ -740,7 +740,7 @@
           "WHERE start_time >= current_date() - INTERVAL 7 DAYS\n",
           "  AND execution_status = 'FINISHED'\n",
           "  AND statement_type = 'SELECT'\n",
-          "GROUP BY LEFT(statement_text, 200)\n",
+          "GROUP BY statement_text\n",
           "HAVING COUNT(*) > 5\n",
           "ORDER BY times_run DESC\n",
           "LIMIT 20"
@@ -980,7 +980,7 @@
             "content": [
               "SELECT statement_id,\n",
               "  executed_by,\n",
-              "  LEFT(statement_text, 200) AS query_preview,\n",
+              "  statement_text,\n",
               "  try_divide(spilled_local_bytes, 1024*1024*1024) AS spilled_gb,\n",
               "  try_divide(total_duration_ms, 1000) AS duration_sec,\n",
               "  start_time\n",
