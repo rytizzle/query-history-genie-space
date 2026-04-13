@@ -702,6 +702,53 @@
           "SELECT\n  DATE(start_time) AS query_date,\n  COUNT(*) AS total,\n  SUM(CASE WHEN execution_status = 'FINISHED' THEN 1 ELSE 0 END) AS succeeded,\n  SUM(CASE WHEN execution_status = 'FAILED' THEN 1 ELSE 0 END) AS failed,\n  SUM(CASE WHEN execution_status = 'CANCELED' THEN 1 ELSE 0 END) AS canceled,\n  SUM(CASE WHEN from_result_cache THEN 1 ELSE 0 END) AS from_cache,\n  SUM(CASE WHEN spilled_local_bytes > 0 THEN 1 ELSE 0 END) AS spilled\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\nGROUP BY DATE(start_time)\nORDER BY query_date"
         ]
       }
+    ],
+    "join_specs": [
+      {
+        "id": "106ea251357c403796e477f902493a24",
+        "left": {
+          "identifier": "system.query.history",
+          "alias": "history"
+        },
+        "right": {
+          "identifier": "ryant_catalog.system_tables.genie_space_current",
+          "alias": "genie_space_current"
+        },
+        "sql": [
+          "history.query_source.genie_space_id = genie_space_current.space_id",
+          "--rt=FROM_RELATIONSHIP_TYPE_MANY_TO_ONE--"
+        ]
+      },
+      {
+        "id": "6c2f88f128884a6faf62d34467ab0d44",
+        "left": {
+          "identifier": "system.query.history",
+          "alias": "history"
+        },
+        "right": {
+          "identifier": "ryant_catalog.system_tables.lakeview_dashboard_denormalized",
+          "alias": "lakeview_dashboard_denormalized"
+        },
+        "sql": [
+          "history.query_source.dashboard_id = lakeview_dashboard_denormalized.dashboard_id",
+          "--rt=FROM_RELATIONSHIP_TYPE_MANY_TO_ONE--"
+        ]
+      },
+      {
+        "id": "aee5654d9040442a94c024dd8a2d2c13",
+        "left": {
+          "identifier": "system.query.history",
+          "alias": "history"
+        },
+        "right": {
+          "identifier": "ryant_catalog.system_tables.warehouse_current",
+          "alias": "warehouse_current"
+        },
+        "sql": [
+          "history.compute.warehouse_id = warehouse_current.id",
+          "--rt=FROM_RELATIONSHIP_TYPE_MANY_TO_ONE--"
+        ]
+      }
     ]
   },
   "benchmarks": {
