@@ -358,6 +358,18 @@
             ]
           }
         ]
+      },
+      {
+        "identifier": "ryant_catalog.system_tables.lakeview_dashboard_denormalized",
+        "column_configs": []
+      },
+      {
+        "identifier": "ryant_catalog.system_tables.genie_space_current",
+        "column_configs": []
+      },
+      {
+        "identifier": "ryant_catalog.system_tables.warehouse_current",
+        "column_configs": []
       }
     ]
   },
@@ -672,7 +684,17 @@
           "SELECT\n  DATE(start_time) AS query_date,\n  COUNT(*) AS total,\n  SUM(CASE WHEN execution_status = 'FINISHED' THEN 1 ELSE 0 END) AS succeeded,\n  SUM(CASE WHEN execution_status = 'FAILED' THEN 1 ELSE 0 END) AS failed,\n  SUM(CASE WHEN execution_status = 'CANCELED' THEN 1 ELSE 0 END) AS canceled,\n  SUM(CASE WHEN from_result_cache THEN 1 ELSE 0 END) AS from_cache,\n  SUM(CASE WHEN spilled_local_bytes > 0 THEN 1 ELSE 0 END) AS spilled\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS\nGROUP BY DATE(start_time)\nORDER BY query_date"
         ]
       }
-    ]
+    ],
+    "0": {
+      "content": [
+        "=== WORKSPACE INVENTORY TABLES ===\n",
+        "Three tables provide names for dashboards, Genie spaces, and warehouses.\n",
+        "lakeview_dashboard_denormalized: Join dashboard_id = query_source.dashboard_id. display_name = dashboard name. Has owner, schedule_count, total_task_duration_l30d, count_queries_l30d, views struct.\n",
+        "genie_space_current: Join space_id = query_source.genie_space_id. title = Genie space name. Has table_count, instruction_count.\n",
+        "warehouse_current: Join id = compute.warehouse_id. name = warehouse name. Has state, warehouse_type, cluster_size.\n",
+        "Always join when users ask by name. Unused dashboard = count_queries_l30d = 0 AND views.published_l30d = 0.\n"
+      ]
+    }
   },
   "benchmarks": {
     "questions": [
@@ -814,6 +836,82 @@
               "SELECT\n  ROUND(try_divide(SUM(read_bytes), (1024*1024*1024*1024)), 2) AS total_read_tb\nFROM system.query.history\nWHERE start_time >= current_date() - INTERVAL 7 DAYS"
             ]
           }
+        ]
+      },
+      {
+        "question": [
+          "What are the top 10 unused dashboards?"
+        ],
+        "sql": [
+          "SELECT display_name AS dashboard_name, owner, path, lifecycle_state, count_queries_l30d, views.published_l30d, views.draft_l30d\n",
+          "FROM ryant_catalog.system_tables.lakeview_dashboard_denormalized\n",
+          "WHERE count_queries_l30d = 0 AND coalesce(views.published_l30d, 0) = 0 AND coalesce(views.draft_l30d, 0) = 0 AND lifecycle_state = 'ACTIVE'\n",
+          "ORDER BY create_time LIMIT 10\n"
+        ]
+      },
+      {
+        "question": [
+          "Which dashboards by name generate the most queries?"
+        ],
+        "sql": [
+          "SELECT d.display_name AS dashboard_name, d.owner, COUNT(*) AS query_count, COUNT(DISTINCT h.executed_by) AS unique_users\n",
+          "FROM system.query.history h\n",
+          "JOIN ryant_catalog.system_tables.lakeview_dashboard_denormalized d ON h.query_source.dashboard_id = d.dashboard_id\n",
+          "WHERE h.start_time >= current_date() - INTERVAL 7 DAYS\n",
+          "GROUP BY d.display_name, d.owner ORDER BY query_count DESC LIMIT 10\n"
+        ]
+      },
+      {
+        "question": [
+          "Which Genie spaces are the most active?"
+        ],
+        "sql": [
+          "SELECT g.title AS genie_space_name, g.table_count, COUNT(*) AS query_count, COUNT(DISTINCT h.executed_by) AS unique_users\n",
+          "FROM system.query.history h\n",
+          "JOIN ryant_catalog.system_tables.genie_space_current g ON h.query_source.genie_space_id = g.space_id\n",
+          "WHERE h.start_time >= current_date() - INTERVAL 7 DAYS\n",
+          "GROUP BY g.title, g.table_count ORDER BY query_count DESC LIMIT 10\n"
+        ]
+      },
+      {
+        "question": [
+          "Which warehouses by name have the most queries?"
+        ],
+        "sql": [
+          "SELECT w.name AS warehouse_name, w.warehouse_type, COUNT(*) AS query_count\n",
+          "FROM system.query.history h\n",
+          "JOIN ryant_catalog.system_tables.warehouse_current w ON h.compute.warehouse_id = w.id\n",
+          "WHERE h.start_time >= current_date() - INTERVAL 7 DAYS\n",
+          "GROUP BY w.name, w.warehouse_type ORDER BY query_count DESC LIMIT 10\n"
+        ]
+      },
+      {
+        "question": [
+          "List all Genie spaces"
+        ],
+        "sql": [
+          "SELECT title, space_id, warehouse_id, table_count, instruction_count, sample_question_count, curated_question_count\n",
+          "FROM ryant_catalog.system_tables.genie_space_current ORDER BY title\n"
+        ]
+      },
+      {
+        "question": [
+          "List all warehouses"
+        ],
+        "sql": [
+          "SELECT name, id, state, warehouse_type, cluster_size, auto_stop_mins, creator_name\n",
+          "FROM ryant_catalog.system_tables.warehouse_current ORDER BY name\n"
+        ]
+      },
+      {
+        "question": [
+          "Dashboard usage summary"
+        ],
+        "sql": [
+          "SELECT COUNT(*) AS total, SUM(CASE WHEN lifecycle_state = 'ACTIVE' THEN 1 ELSE 0 END) AS active,\n",
+          "SUM(CASE WHEN count_queries_l30d = 0 AND coalesce(views.published_l30d, 0) = 0 THEN 1 ELSE 0 END) AS unused_l30d,\n",
+          "SUM(CASE WHEN count_queries_l30d > 0 THEN 1 ELSE 0 END) AS queried_l30d, SUM(CASE WHEN schedule_count > 0 THEN 1 ELSE 0 END) AS scheduled\n",
+          "FROM ryant_catalog.system_tables.lakeview_dashboard_denormalized\n"
         ]
       }
     ]
