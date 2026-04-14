@@ -919,6 +919,32 @@
             ]
           }
         ]
+      },
+      {
+        "id": "ec9759862f0a42b1bc8884e248c21a45",
+        "question": [
+          "Find me the most expensive dashboards with low viewers"
+        ],
+        "answer": [
+          {
+            "format": "SQL",
+            "content": [
+              "SELECT d.display_name AS dashboard_name,\n",
+              "  d.owner,\n",
+              "  d.count_queries_l30d,\n",
+              "  ROUND(d.total_task_duration_l30d / 1000, 2) AS total_duration_sec_l30d,\n",
+              "  coalesce(d.views.published_l30d, 0) AS published_views_l30d,\n",
+              "  coalesce(d.views.published_users_l30d, 0) AS unique_viewers_l30d,\n",
+              "  coalesce(d.views.draft_l30d, 0) AS draft_views_l30d,\n",
+              "  d.schedule_count\n",
+              "FROM ryant_catalog.system_tables.lakeview_dashboard_denormalized d\n",
+              "WHERE d.count_queries_l30d > 0\n",
+              "  AND coalesce(d.views.published_users_l30d, 0) <= 2\n",
+              "ORDER BY d.total_task_duration_l30d DESC\n",
+              "LIMIT 20\n"
+            ]
+          }
+        ]
       }
     ]
   }
