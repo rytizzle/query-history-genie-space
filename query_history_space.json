@@ -921,6 +921,45 @@
         ]
       },
       {
+        "id": "cfcb29f865d74c1686ed3b4e850f74cc",
+        "question": [
+          "What are Genie spaces that have fallen off and people don't use anymore?"
+        ],
+        "answer": [
+          {
+            "format": "SQL",
+            "content": [
+              "SELECT g.title AS genie_space_name,\n",
+              "  g.table_count,\n",
+              "  g.curated_question_count,\n",
+              "  g.create_time,\n",
+              "  g.update_time,\n",
+              "  coalesce(recent.query_count, 0) AS queries_last_30d,\n",
+              "  coalesce(recent.unique_users, 0) AS unique_users_last_30d,\n",
+              "  coalesce(older.query_count, 0) AS queries_30_to_90d,\n",
+              "  coalesce(older.unique_users, 0) AS unique_users_30_to_90d\n",
+              "FROM ryant_catalog.system_tables.genie_space_current g\n",
+              "LEFT JOIN (\n",
+              "  SELECT query_source.genie_space_id, COUNT(*) AS query_count, COUNT(DISTINCT executed_by) AS unique_users\n",
+              "  FROM system.query.history\n",
+              "  WHERE start_time >= current_date() - INTERVAL 30 DAYS AND query_source.genie_space_id IS NOT NULL\n",
+              "  GROUP BY query_source.genie_space_id\n",
+              ") recent ON g.space_id = recent.genie_space_id\n",
+              "LEFT JOIN (\n",
+              "  SELECT query_source.genie_space_id, COUNT(*) AS query_count, COUNT(DISTINCT executed_by) AS unique_users\n",
+              "  FROM system.query.history\n",
+              "  WHERE start_time >= current_date() - INTERVAL 90 DAYS AND start_time < current_date() - INTERVAL 30 DAYS AND query_source.genie_space_id IS NOT NULL\n",
+              "  GROUP BY query_source.genie_space_id\n",
+              ") older ON g.space_id = older.genie_space_id\n",
+              "WHERE coalesce(recent.query_count, 0) = 0\n",
+              "  AND coalesce(older.query_count, 0) > 0\n",
+              "ORDER BY older.query_count DESC\n",
+              "LIMIT 20\n"
+            ]
+          }
+        ]
+      },
+      {
         "id": "ec9759862f0a42b1bc8884e248c21a45",
         "question": [
           "Find me the most expensive dashboards with low viewers"
